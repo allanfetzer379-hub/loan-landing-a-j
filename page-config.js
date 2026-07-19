@@ -15,7 +15,7 @@
   window.TRAFFIC_SOURCE = detectedTrafficSource || rememberedTrafficSource();
 
   const defaults = {
-    company_name: "長原資產管理有限公司",
+    company_name: "中喬資產管理有限公司",
     line_id: "@703umlsa",
     line_url: "https://line.me/R/ti/p/@703umlsa",
     pixel_ids: [
