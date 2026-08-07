@@ -6,8 +6,8 @@
 
   const SUPABASE_URL = "https://syddbzqkhotpyyoqykof.supabase.co";
   const SUPABASE_KEY = "sb_publishable_STtS281jKjrPZ_zfOiWvdA_pdB7kg1Q";
-  const slug = "a-l";
   const params = new URLSearchParams(location.search);
+  const slug = "a-l";
 
   window.PAGE_SLUG = slug;
   const detectedTrafficSource = detectTrafficSource();
@@ -16,10 +16,12 @@
 
   const defaults = {
     slug,
-    company_name: "順富資產管理有限公司",
-    line_id: "@524gqvaa",
-    line_url: "https://line.me/R/ti/p/@524gqvaa",
-    pixel_ids: []
+    company_name: "富恩資產管理有限公司",
+    line_id: "@034mlgoy",
+    line_url: "https://line.me/R/ti/p/@034mlgoy",
+    pixel_ids: [],
+    tiktok_pixel_ids: [],
+    active: true
   };
 
   window.PAGE_CONFIG_READY = loadConfig().finally(() => {
@@ -27,7 +29,6 @@
     loadingStyle.remove();
   });
   window.trackPageEvent = trackPageEvent;
-  window.trackTikTokEvent = trackTikTokEvent;
 
   async function loadConfig() {
     let config = defaults;
@@ -37,14 +38,7 @@
         { headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` } }
       );
       const rows = response.ok ? await response.json() : [];
-      if (rows[0]) {
-        config = {
-          ...defaults,
-          line_url: rows[0].line_url || defaults.line_url,
-          line_id: rows[0].line_id || defaults.line_id,
-          pixel_ids: Array.isArray(rows[0].pixel_ids) ? rows[0].pixel_ids : defaults.pixel_ids
-        };
-      }
+      if (rows[0]) config = { ...defaults, ...rows[0] };
     } catch (_) {}
 
     window.PAGE_CONFIG = config;
@@ -56,56 +50,72 @@
     document.querySelectorAll("[data-company-name]").forEach(el => {
       el.textContent = config.company_name;
     });
-    document.title = `免費資金需求評估｜${config.company_name}`;
-
-    const facebookIds = config.pixel_ids
-      .filter(pixel => pixel && pixel.enabled !== false && pixel.platform !== "tiktok")
-      .map(pixel => String(pixel.id || "").trim())
-      .filter(Boolean);
-    const tiktokIds = config.pixel_ids
-      .filter(pixel => pixel && pixel.enabled !== false && pixel.platform === "tiktok")
-      .map(pixel => String(pixel.id || "").trim())
-      .filter(Boolean);
-
-    installFacebookPixels(facebookIds);
+    document.title = document.title.replace("富恩資產管理有限公司", config.company_name);
+    document.querySelectorAll("a[href]").forEach(link => {
+      const href = link.getAttribute("href");
+      if (!href || href.startsWith("#") || href.startsWith("http") || href.startsWith("javascript:")) return;
+      const url = new URL(href, location.href);
+      url.searchParams.set("page", slug);
+      link.href = url.pathname.split("/").pop() + url.search;
+    });
+    if (config.active === false) {
+      document.body.innerHTML = '<main style="font-family:sans-serif;text-align:center;padding:80px 20px"><h1>此頁面目前暫停服務</h1><p>請稍後再試。</p></main>';
+      return;
+    }
+    const { facebookIds, tiktokIds } = splitPixelIds(config.pixel_ids || []);
+    installPixels(facebookIds);
     installTikTokPixels(tiktokIds);
   }
 
-  function installFacebookPixels(ids) {
-    if (!ids.length) return;
-    if (!window.fbq) {
-      window.fbq = function () { window.fbq.callMethod ? window.fbq.callMethod.apply(window.fbq, arguments) : window.fbq.queue.push(arguments); };
-      window.fbq.queue = [];
-      window.fbq.loaded = true;
-      window.fbq.version = "2.0";
-      const script = document.createElement("script");
-      script.async = true;
-      script.src = "https://connect.facebook.net/en_US/fbevents.js";
-      document.head.appendChild(script);
-    }
+  function splitPixelIds(pixels) {
+    const list = Array.isArray(pixels) ? pixels : String(pixels || "").split(/[\s,]+/);
+    const facebookIds = [];
+    const tiktokIds = [];
+    list.forEach(pixel => {
+      const id = String((pixel && typeof pixel === "object" ? pixel.id : pixel) || "").trim();
+      if (!id) return;
+      if (pixel && typeof pixel === "object" && pixel.enabled === false) return;
+      const platform = String((pixel && typeof pixel === "object" ? pixel.platform : "") || "").toLowerCase();
+      if (platform === "tiktok") tiktokIds.push(id);
+      else facebookIds.push(id);
+    });
+    return { facebookIds, tiktokIds };
+  }
 
-    ids.forEach(id => {
+  function installPixels(ids) {
+    const cleanIds = Array.isArray(ids) ? ids : String(ids || "").split(/[\s,]+/);
+    cleanIds.filter(Boolean).forEach(id => {
       if (document.querySelector(`[data-pixel-id="${id}"]`)) return;
       const marker = document.createElement("meta");
       marker.dataset.pixelId = id;
       document.head.appendChild(marker);
+      if (!window.fbq) {
+        window.fbq = function () { window.fbq.callMethod ? window.fbq.callMethod.apply(window.fbq, arguments) : window.fbq.queue.push(arguments); };
+        window.fbq.queue = [];
+        window.fbq.loaded = true;
+        window.fbq.version = "2.0";
+        const script = document.createElement("script");
+        script.async = true;
+        script.src = "https://connect.facebook.net/en_US/fbevents.js";
+        document.head.appendChild(script);
+      }
       window.fbq("init", id);
     });
-    window.fbq("track", "PageView");
+    if (cleanIds.filter(Boolean).length) window.fbq("track", "PageView");
   }
 
-  function trackPageEvent(eventName, eventParams) {
+  function trackPageEvent(eventName, params) {
     if (!window.fbq) return;
-    window.fbq("track", eventName, { page_slug: slug, ...(eventParams || {}) });
+    window.fbq("track", eventName, { page_slug: slug, ...(params || {}) });
   }
 
   function installTikTokPixels(ids) {
-    if (!ids.length) return;
+    const cleanIds = (Array.isArray(ids) ? ids : String(ids || "").split(/[\s,]+/)).filter(Boolean);
+    if (!cleanIds.length) return;
     if (!window.ttq) {
       !function(w,d,t){w.TiktokAnalyticsObject=t;var ttq=w[t]=w[t]||[];ttq.methods=["page","track","identify","instances","debug","on","off","once","ready","alias","group","enableCookie","disableCookie","holdConsent","revokeConsent","grantConsent"],ttq.setAndDefer=function(t,e){t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}};for(var i=0;i<ttq.methods.length;i++)ttq.setAndDefer(ttq,ttq.methods[i]);ttq.instance=function(t){for(var e=ttq._i[t]||[],n=0;n<ttq.methods.length;n++)ttq.setAndDefer(e,ttq.methods[n]);return e},ttq.load=function(e,n){var i="https://analytics.tiktok.com/i18n/pixel/events.js",o=n&&n.partner;ttq._i=ttq._i||{},ttq._i[e]=[],ttq._i[e]._u=i,ttq._t=ttq._t||{},ttq._t[e]=+new Date,ttq._o=ttq._o||{},ttq._o[e]=n||{};var a=document.createElement("script");a.type="text/javascript",a.async=!0,a.src=i+"?sdkid="+e+"&lib="+t;var s=document.getElementsByTagName("script")[0];s.parentNode.insertBefore(a,s)}}(window,document,"ttq");
     }
-
-    ids.forEach(id => {
+    cleanIds.forEach(id => {
       if (document.querySelector(`[data-tiktok-pixel-id="${id}"]`)) return;
       const marker = document.createElement("meta");
       marker.dataset.tiktokPixelId = id;
@@ -113,12 +123,15 @@
       window.ttq.load(id);
     });
     window.ttq.page();
+    if (/\/loan\.html$/i.test(location.pathname)) trackTikTokEvent("ViewContent", { content_type: "loan_options" });
   }
 
-  function trackTikTokEvent(eventName, eventParams) {
+  function trackTikTokEvent(eventName, params) {
     if (!window.ttq) return;
-    window.ttq.track(eventName, { page_slug: slug, ...(eventParams || {}) });
+    window.ttq.track(eventName, { page_slug: slug, ...(params || {}) });
   }
+
+  window.trackTikTokEvent = trackTikTokEvent;
 
   function detectTrafficSource() {
     const source = String(params.get("utm_source") || params.get("source") || "").toLowerCase();
