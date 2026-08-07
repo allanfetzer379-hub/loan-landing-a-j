@@ -1,8 +1,5 @@
 (function () {
-  document.documentElement.classList.add("page-config-loading");
-  const loadingStyle = document.createElement("style");
-  loadingStyle.textContent = ".page-config-loading [data-company-name]{visibility:hidden}";
-  document.head.appendChild(loadingStyle);
+  const FIXED_COMPANY_NAME = "順富資產管理有限公司";
 
   const SUPABASE_URL = "https://syddbzqkhotpyyoqykof.supabase.co";
   const SUPABASE_KEY = "sb_publishable_STtS281jKjrPZ_zfOiWvdA_pdB7kg1Q";
@@ -16,7 +13,7 @@
 
   const defaults = {
     slug,
-    company_name: "富恩資產管理有限公司",
+    company_name: FIXED_COMPANY_NAME,
     line_id: "@034mlgoy",
     line_url: "https://line.me/R/ti/p/@034mlgoy",
     pixel_ids: [],
@@ -24,10 +21,7 @@
     active: true
   };
 
-  window.PAGE_CONFIG_READY = loadConfig().finally(() => {
-    document.documentElement.classList.remove("page-config-loading");
-    loadingStyle.remove();
-  });
+  window.PAGE_CONFIG_READY = loadConfig();
   window.trackPageEvent = trackPageEvent;
 
   async function loadConfig() {
@@ -38,7 +32,14 @@
         { headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` } }
       );
       const rows = response.ok ? await response.json() : [];
-      if (rows[0]) config = { ...defaults, ...rows[0] };
+      if (rows[0]) {
+        config = {
+          ...defaults,
+          line_url: rows[0].line_url || defaults.line_url,
+          line_id: rows[0].line_id || defaults.line_id,
+          pixel_ids: Array.isArray(rows[0].pixel_ids) ? rows[0].pixel_ids : defaults.pixel_ids
+        };
+      }
     } catch (_) {}
 
     window.PAGE_CONFIG = config;
@@ -48,9 +49,9 @@
 
   function applyConfig(config) {
     document.querySelectorAll("[data-company-name]").forEach(el => {
-      el.textContent = config.company_name;
+      el.textContent = FIXED_COMPANY_NAME;
     });
-    document.title = document.title.replace("富恩資產管理有限公司", config.company_name);
+    document.title = `快速貸款試算｜${FIXED_COMPANY_NAME}`;
     document.querySelectorAll("a[href]").forEach(link => {
       const href = link.getAttribute("href");
       if (!href || href.startsWith("#") || href.startsWith("http") || href.startsWith("javascript:")) return;
