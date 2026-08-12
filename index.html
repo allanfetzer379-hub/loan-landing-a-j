@@ -326,10 +326,6 @@
             <div class="free-box">✓ 申辦全程免費，絕無任何隱藏費用。</div>
             <div class="question-label">銀行是否為警示戶？ *</div>
             <div class="yn" data-group="is_warning"><button class="choice" type="button" data-value="是">是</button><button class="choice" type="button" data-value="否">否</button></div>
-            <div class="question-label">是否有個人外幣帳戶？ *</div>
-            <div class="yn" data-group="has_foreign"><button class="choice" type="button" data-value="是">是</button><button class="choice" type="button" data-value="否">否</button></div>
-            <div class="question-label">是否有信貸、房貸、車貸或機貸？ *</div>
-            <div class="yn" data-group="has_loan"><button class="choice" type="button" data-value="是">是</button><button class="choice" type="button" data-value="否">否</button></div>
             <div class="question-label">是否有銀行協商或呆帳？ *</div>
             <div class="yn" data-group="has_debt"><button class="choice" type="button" data-value="是">是</button><button class="choice" type="button" data-value="否">否</button></div>
             <div id="ynError" class="error">請完成所有財務狀況選項</div>
@@ -392,8 +388,6 @@
     purpose: '週轉理財',
     amountChoice: '30萬 - 50萬',
     is_warning: '',
-    has_foreign: '',
-    has_loan: '',
     has_debt: ''
   };
 
@@ -636,7 +630,7 @@
       }
       return true;
     }
-    const requiredYn = ['is_warning','has_foreign','has_loan','has_debt'];
+    const requiredYn = ['is_warning','has_debt'];
     const ok = requiredYn.every(key => state[key]);
     if(!ok) document.getElementById('ynError').style.display = 'block';
     if(state.is_warning === '是'){
@@ -664,10 +658,10 @@
       id_number: String(data.id_card || '').trim().toUpperCase(),
       phone: String(data.phone || '').trim(),
       line_id: String(data.lineId || '').trim(),
-      q1_existing_loan: '是否有信貸/房貸/車貸/機貸：' + (state.has_loan || '') + '；銀行協商或呆帳：' + (state.has_debt || ''),
+      q1_existing_loan: '銀行協商或呆帳：' + (state.has_debt || ''),
       q2_bank_status: '銀行是否為警示戶：' + (state.is_warning || ''),
       q3_amount_needed: state.amountChoice || '',
-      q4_foreign_currency_account: '是否有個人外幣帳戶：' + (state.has_foreign || ''),
+      q4_foreign_currency_account: 'FORM_V2_NINE_FIELDS',
       source_url: window.location.href,
       traffic_source: window.TRAFFIC_SOURCE || null,
       user_agent: navigator.userAgent,
