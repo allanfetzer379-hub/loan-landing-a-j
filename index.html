@@ -224,7 +224,7 @@
       <div class="brand"><span class="back-dot">‹</span><span class="brand-name" data-company-name>其軒投資有限公司</span></div>
       <div class="status">線上試算中</div>
     </div>
-    <div class="sub-head">最高可貸 NT$1,000,000 · 年利率 3.88% 起</div>
+    <div class="sub-head">最高可貸 NT$1,000,000 · 年利率 1.5%–3.8%</div>
   </header>
 
   <main id="estimateScreen" class="screen active">
@@ -249,6 +249,8 @@
           <button class="option" type="button" data-term="60">60期</button>
           <button class="option" type="button" data-term="72">72期</button>
           <button class="option" type="button" data-term="84">84期</button>
+          <button class="option" type="button" data-term="96">96期</button>
+          <button class="option" type="button" data-term="120">120期（10年）</button>
         </div>
       </div>
 
@@ -267,15 +269,15 @@
       <div class="card result-card">
         <div class="result-kicker">試算結果（僅供參考）</div>
         <div class="monthly-label">每月應還</div>
-        <div id="monthlyPayment" class="monthly-amount">NT$ 8,841</div>
+        <div id="monthlyPayment" class="monthly-amount">NT$ 8,527</div>
         <div class="result-stats">
-          <div class="stat"><span>年利率</span><b id="rateText">3.88%</b></div>
-          <div class="stat"><span>總利息</span><b id="interestText">NT$ 1.8萬</b></div>
-          <div class="stat"><span>總還款</span><b id="totalText">NT$ 31.8萬</b></div>
+          <div class="stat"><span>年利率</span><b id="rateText">1.50%</b></div>
+          <div class="stat"><span>總利息</span><b id="interestText">NT$ 0.7萬</b></div>
+          <div class="stat"><span>總還款</span><b id="totalText">NT$ 30.7萬</b></div>
         </div>
       </div>
 
-      <div class="note">以上試算僅供參考，實際核准利率及金額依審核結果為準，年利率範圍 3.88% 至 15.00%。</div>
+      <div class="note">以上試算僅供參考，實際核准利率、金額及還款期數依審核結果為準，年利率範圍 1.5% 至 3.8%，還款期數最長可達 120 期（10年）。</div>
       <button id="applyNow" class="primary-btn" type="button">立即申請貸款 ›</button>
       <div class="trust-row">
         <span class="trust green">全程免費</span>
@@ -385,7 +387,7 @@
   let ENTERPRISE_LINE_URL = 'https://line.me/R/ti/p/@034mlgoy';
   let ENTERPRISE_LINE_ID = '@034mlgoy';
   let currentStep = 1;
-  const annualRate = 3.88;
+  const annualRate = 1.5;
   const state = {
     amountNumber: 300000,
     term: 36,
