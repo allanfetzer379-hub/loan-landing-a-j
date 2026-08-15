@@ -5,6 +5,9 @@
   const SUPABASE_KEY = "sb_publishable_STtS281jKjrPZ_zfOiWvdA_pdB7kg1Q";
   const params = new URLSearchParams(location.search);
   const slug = "a-l";
+  const CONFIG_TIMEOUT_MS = 1200;
+  const initializedFacebookPixels = new Set();
+  const pageViewedFacebookPixels = new Set();
 
   window.PAGE_SLUG = slug;
   const detectedTrafficSource = detectTrafficSource();
@@ -16,20 +19,30 @@
     company_name: FIXED_COMPANY_NAME,
     line_id: "@034mlgoy",
     line_url: "https://line.me/R/ti/p/@034mlgoy",
-    pixel_ids: [],
+    pixel_ids: [
+      { id: "1381453987295085", enabled: true, platform: "facebook" },
+      { id: "1042995268331677", enabled: true, platform: "facebook" },
+      { id: "D8MN11JC77U56UIVBLB0", enabled: true, platform: "tiktok" }
+    ],
     tiktok_pixel_ids: [],
     active: true
   };
 
+  bootstrapMetaPixel();
   window.PAGE_CONFIG_READY = loadConfig();
   window.trackPageEvent = trackPageEvent;
 
   async function loadConfig() {
     let config = defaults;
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), CONFIG_TIMEOUT_MS);
     try {
       const response = await fetch(
         `${SUPABASE_URL}/rest/v1/site_settings?id=eq.1&select=line_url,line_id,pixel_ids&limit=1`,
-        { headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` } }
+        {
+          headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` },
+          signal: controller.signal
+        }
       );
       const rows = response.ok ? await response.json() : [];
       if (rows[0]) {
@@ -40,7 +53,10 @@
           pixel_ids: Array.isArray(rows[0].pixel_ids) ? rows[0].pixel_ids : defaults.pixel_ids
         };
       }
-    } catch (_) {}
+    } catch (_) {
+    } finally {
+      clearTimeout(timeoutId);
+    }
 
     window.PAGE_CONFIG = config;
     applyConfig(config);
@@ -83,26 +99,30 @@
     return { facebookIds, tiktokIds };
   }
 
+  function bootstrapMetaPixel() {
+    !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+    n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;
+    n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;
+    t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,
+    document,'script','https://connect.facebook.net/en_US/fbevents.js');
+  }
+
   function installPixels(ids) {
-    const cleanIds = Array.isArray(ids) ? ids : String(ids || "").split(/[\s,]+/);
-    cleanIds.filter(Boolean).forEach(id => {
-      if (document.querySelector(`[data-pixel-id="${id}"]`)) return;
-      const marker = document.createElement("meta");
-      marker.dataset.pixelId = id;
-      document.head.appendChild(marker);
-      if (!window.fbq) {
-        window.fbq = function () { window.fbq.callMethod ? window.fbq.callMethod.apply(window.fbq, arguments) : window.fbq.queue.push(arguments); };
-        window.fbq.queue = [];
-        window.fbq.loaded = true;
-        window.fbq.version = "2.0";
-        const script = document.createElement("script");
-        script.async = true;
-        script.src = "https://connect.facebook.net/en_US/fbevents.js";
-        document.head.appendChild(script);
+    const sourceIds = Array.isArray(ids) ? ids : String(ids || "").split(/[\s,]+/);
+    const cleanIds = [...new Set(sourceIds.map(String).filter(id => /^\d{8,20}$/.test(id)))];
+    cleanIds.forEach(id => {
+      if (!initializedFacebookPixels.has(id)) {
+        const marker = document.createElement("meta");
+        marker.dataset.pixelId = id;
+        document.head.appendChild(marker);
+        window.fbq("init", id);
+        initializedFacebookPixels.add(id);
       }
-      window.fbq("init", id);
+      if (!pageViewedFacebookPixels.has(id)) {
+        window.fbq("trackSingle", id, "PageView", { page_slug: slug });
+        pageViewedFacebookPixels.add(id);
+      }
     });
-    if (cleanIds.filter(Boolean).length) window.fbq("track", "PageView");
   }
 
   function trackPageEvent(eventName, params) {
