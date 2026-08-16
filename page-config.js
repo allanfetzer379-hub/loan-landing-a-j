@@ -1,5 +1,5 @@
 (function () {
-  const FIXED_COMPANY_NAME = "其軒投資有限公司";
+  const FIXED_COMPANY_NAME = "文才投資有限公司";
 
   const SUPABASE_URL = "https://syddbzqkhotpyyoqykof.supabase.co";
   const SUPABASE_KEY = "sb_publishable_STtS281jKjrPZ_zfOiWvdA_pdB7kg1Q";
